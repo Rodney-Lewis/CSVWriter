@@ -14,6 +14,9 @@ public class App {
 
         List<Double> metrics = new ArrayList<Double>();
         
+        /*
+            Run logging in two sepeate timed scheduled threads.
+        */
         ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
             exec.scheduleAtFixedRate(new Runnable() {
             @Override

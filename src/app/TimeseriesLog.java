@@ -14,6 +14,9 @@ public class TimeseriesLog extends Log {
         buildLogWriter();
     }
 
+    /*
+        initalizes FileWriter with log information.
+    */
     private void buildLogWriter() {
         try {
             this.timeseriesLogWriter = new FileWriter(log);
@@ -22,6 +25,10 @@ public class TimeseriesLog extends Log {
         }
     }
 
+    /*
+        Writes a list of metrics to respective timeseries log.
+        @param List of metrics to be written
+    */
     public void writeMetricsToTimeseriesLog(List <Double> metrics) {
         if(log.length() < MAX_LOG_SIZE) {
             try {
@@ -35,6 +42,10 @@ public class TimeseriesLog extends Log {
         }
     }
 
+    /*
+        Writes a list of metrics to respective timeseries log.
+        @param Array of metrics to be written
+    */
     public void writeMetricsToTimeseriesLog(Double[] metrics) {
         if(log.length() < MAX_LOG_SIZE) {
             try {
@@ -48,6 +59,10 @@ public class TimeseriesLog extends Log {
         }
     }
 
+     /*
+        Writes a single metric to respective timeseries log.
+        @param Single double metric to be written
+    */
     public void writeMetricToTimeseriesLog(Double metric) {
         if(log.length() < MAX_LOG_SIZE) {
             try {
@@ -61,6 +76,12 @@ public class TimeseriesLog extends Log {
         }   
     }
 
+    /*
+        Converts array or list of doubles to a list of strings.
+        Converts the list of strings to a single string delimted by commas.
+        @param List or array of doubles
+        @return Comma delimted string of list or array values
+    */
     private String doubleListToTimeseriesLogString(List<Double> metrics) {
         List<String> metricsStringList = new ArrayList<String>();
         for (Double var : metrics) {

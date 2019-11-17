@@ -15,6 +15,9 @@ public class EventLog extends Log {
     private FileWriter eventLogWriter;
     private static EventLog instance = null;
 
+    /*
+        Singleton so that the EventLog is GLOBAL.
+    */
     public static EventLog getInstance() {
         if (instance == null) {
             instance = new EventLog("Event");
@@ -27,6 +30,9 @@ public class EventLog extends Log {
         buildLogWriter();
     }
 
+    /*
+        initalizes FileWriter with log information.
+    */
     private void buildLogWriter() {
         if(!requiredFreeSpaceThresholdExceeded) {
             try {
@@ -38,6 +44,11 @@ public class EventLog extends Log {
         }
     }
 
+    /*
+        Writes a event entry to the event log with error status and message.
+        @param error code
+        @param String message that describes the event
+    */
     public void writeToEventLog(Severity error, String msg){
         if(log.length() < MAX_LOG_SIZE) {
             try {
