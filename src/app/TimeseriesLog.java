@@ -1,87 +1,98 @@
 package app;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TimeseriesLog extends Log {
 
-    private FileWriter timeseriesLogWriter;
-
     public TimeseriesLog(String fileName) {
         super(fileName);
-        buildLogWriter();
+        initialTimestampWrite();
     }
 
-    /*
-        initalizes FileWriter with log information.
-    */
-    private void buildLogWriter() {
+    private void initialTimestampWrite() {
         try {
-            this.timeseriesLogWriter = new FileWriter(log);
+            this.logWriter.append(String.format("%s, %s, %s\n", "#####", "START " + getPresentTimeInDateFormat(), "#####"));
+            this.logWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     /*
-        Writes a list of metrics to respective timeseries log.
-        @param List of metrics to be written
-    */
-    public void writeMetricsToTimeseriesLog(List <Double> metrics) {
-        if(log.length() < MAX_LOG_SIZE) {
+     * Writes a list of metrics to respective timeseries log.
+     * 
+     * @param List of metrics to be written
+     */
+    public void writeMetricsToTimeseriesLog(List<Double> metrics) {
+
+        if (fileSizeCheck() && diskSpaceCheck()) {
             try {
-                timeseriesLogWriter.write(String.format("%s,%s\n", getPresentTimeInDateFormat(), doubleListToTimeseriesLogString(metrics)));
-                timeseriesLogWriter.flush();
+                logWriter.append(String.format("%s,%s\n", getPresentTimeInDateFormat(),
+                        doubleListToTimeseriesLogString(metrics)));
+                logWriter.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         } else {
-            logSizeThresholdExceeded();
+            logFileSizeExceeded();
+            initializeNewFile();
+            initialTimestampWrite();
         }
     }
 
     /*
-        Writes a list of metrics to respective timeseries log.
-        @param Array of metrics to be written
-    */
+     * Writes a list of metrics to respective timeseries log.
+     * 
+     * @param Array of metrics to be written
+     */
     public void writeMetricsToTimeseriesLog(Double[] metrics) {
-        if(log.length() < MAX_LOG_SIZE) {
+
+        if (fileSizeCheck() && diskSpaceCheck()) {
             try {
-                timeseriesLogWriter.write(String.format("%s,%s\n", getPresentTimeInDateFormat(), doubleArryToTimeseriesLogString(metrics)));
-                timeseriesLogWriter.flush();
+                logWriter.append(String.format("%s,%s\n", getPresentTimeInDateFormat(),
+                        doubleArryToTimeseriesLogString(metrics)));
+                logWriter.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         } else {
-            logSizeThresholdExceeded();
+            logFileSizeExceeded();
+            initializeNewFile();
+            initialTimestampWrite();
         }
     }
 
-     /*
-        Writes a single metric to respective timeseries log.
-        @param Single double metric to be written
-    */
+    /*
+     * Writes a single metric to respective timeseries log.
+     * 
+     * @param Single double metric to be written
+     */
     public void writeMetricToTimeseriesLog(Double metric) {
-        if(log.length() < MAX_LOG_SIZE) {
+
+        if (fileSizeCheck() && diskSpaceCheck()) {
             try {
-                timeseriesLogWriter.write(String.format("%s,%s\n", getPresentTimeInDateFormat(), metric));
-                timeseriesLogWriter.flush();
+                logWriter.append(String.format("%s,%s\n", getPresentTimeInDateFormat(), metric));
+                logWriter.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         } else {
-            logSizeThresholdExceeded();
-        }   
+            logFileSizeExceeded();
+            initializeNewFile();
+            initialTimestampWrite();
+        }
     }
 
     /*
-        Converts array or list of doubles to a list of strings.
-        Converts the list of strings to a single string delimted by commas.
-        @param List or array of doubles
-        @return Comma delimted string of list or array values
-    */
+     * Converts array or list of doubles to a list of strings. Converts the list of
+     * strings to a single string delimted by commas.
+     * 
+     * @param List or array of doubles
+     * 
+     * @return Comma delimted string of list or array values
+     */
     private String doubleListToTimeseriesLogString(List<Double> metrics) {
         List<String> metricsStringList = new ArrayList<String>();
         for (Double var : metrics) {
