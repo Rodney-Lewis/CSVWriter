@@ -1,7 +1,5 @@
 package events;
 
-import java.io.IOException;
-
 import logger.CSVWriter;
 
 public class EventsHandler extends CSVWriter {
@@ -17,6 +15,12 @@ public class EventsHandler extends CSVWriter {
         this.level = level;
     }
 
+    public EventsHandler(String fileName, int maxLogFileCount, long minimumRequiredFreeSpace,
+    long maxDirectorySize, long maxLogSize, Severity level) {
+        super(fileName, maxLogFileCount, minimumRequiredFreeSpace, maxDirectorySize, maxLogSize);
+        this.level = level;
+    }
+
     private boolean compareLevels(Severity comparedLevel) {
         return level.ordinal() >= comparedLevel.ordinal();
     }
@@ -24,24 +28,16 @@ public class EventsHandler extends CSVWriter {
     /*
      * Writes a event entry to the event log with error status and message.
      * 
-     * @param error code
+     * @param Severity level
      * 
-     * @param String message that describes the event
+     * @param Message that describes the event
      */
-    public void writeToEventLog(Severity level, String msg) {
-        if (diskSpaceCheck()) {
-            if (fileSizeCheck()) {
-                try {
-                    if (compareLevels(level)) {
-                        csvWriter.append(String.format("%s, %s, %s\n", getPresentTimeInDateFormat(), level, msg));
-                        csvWriter.flush();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                newFileWithEpochTimestamp();
-            }
+    public void writeToEventLog(Severity level, String message) {
+        if (headersInitialized == false) {
+            writeHeadersToLog(String.format("%s,%s,%s\n", "Timestamp", "Level", "Message"));
+        }
+        if (compareLevels(level)) {
+            writeToLog(String.format("%s,%s,%s\n", String.valueOf(((System.currentTimeMillis() / 1000L) - getInitTimeSeconds())),level, message));
         }
     }
 }

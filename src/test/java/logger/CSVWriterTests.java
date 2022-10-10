@@ -3,7 +3,9 @@
  */
 package logger;
 
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import events.EventsHandler;
 import events.EventsHandler.Severity;
@@ -12,9 +14,9 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
-
 import metrics.TimeseriesHandler;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CSVWriterTests {
     @Test
     public void EventLogMethod() {
@@ -44,7 +46,7 @@ public class CSVWriterTests {
         timeseriesHandler.registerMetric("Long", longSupplier);
         timeseriesHandler.registerMetric("Double", doubleSupplier);
 
-        for (int i = 0; i < 500; i++) {
+        for (int i = 0; i < 10; i++) {
             timeseriesHandler.writeMetricsToTimeseriesLog();
         }
     }

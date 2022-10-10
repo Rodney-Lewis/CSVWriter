@@ -2,92 +2,191 @@ package logger;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.nio.file.Paths;
 
 public abstract class CSVWriter {
     private final String FILE_EXTENSION = ".csv";
-    private final int MAX_LOG_FILE_COUNT = 20;
-    private final int MIN_REQUIRED_FREE_SPACE = 1024 * 10000;
-    private final int MAX_LOG_SIZE = 1024 * 100;
-    private final String filePath;
-    private final File rootDir;
-    private final String fileName;
-    private FilenameFilter filter;
+    private final double STORAGE_PURGE_PERCENT = 0.975;
+    private final int MAX_LOG_FILE_COUNT;
+    private final long MIN_REQUIRED_FREE_SPACE;
+    private final long MAX_DIRECTORY_SIZE;
+    private final long MAX_LOG_SIZE;
+    private final File LOG_DIRECTORY;
+    private final File ROOT_DIRECTORY;
+    private final String FILENAME;
+    private final long INIT_TIME_SECONDS;
     private File log;
-
-    protected FileWriter csvWriter;
     private String os;
+    private long lastFlush;
+
+    protected boolean headersInitialized = false;
+    protected FileWriter csvWriter;
+
 
     protected CSVWriter(String fileName) {
-        os = System.getProperty("os.name");
-        if (os.toLowerCase().contains("windows")) {
-            this.filePath = "C:\\Logs\\FRC\\";
-            this.rootDir = new File("C:\\");
-        } else {
-            this.filePath = "/var/log/FRC/";
-            this.rootDir = new File("/");
-        }
-        this.fileName = fileName;
-        newFileWithEpochTimestamp();
+        this(fileName, 12, EMultiByte.MEGABYTE.bytes * 25, EMultiByte.MEGABYTE.bytes * 10,
+                EMultiByte.KILOBYTE.bytes * 50);
     }
 
-    protected void newFileWithEpochTimestamp() {
-        File logDir = new File(filePath);
-        filter = (dir, name) -> name.contains(fileName + FILE_EXTENSION);
-
-        File[] files = logDir.listFiles(filter);
-
-        if (files.length >= MAX_LOG_FILE_COUNT) {
-            for (int i = 0; i < files.length - MAX_LOG_FILE_COUNT; i++) {
-                files[i].delete();
-            }
+    protected CSVWriter(String fileName, int maxLogFileCount, long minimumRequiredFreeSpace,
+            long maxDirectorySize, long maxLogSize) {
+        os = System.getProperty("os.name");
+        if (os.toLowerCase().contains("windows")) {
+            this.LOG_DIRECTORY =
+                    new File(System.getProperty("user.home") + "\\Documents\\FRC-CSV\\");
+        } else {
+            this.LOG_DIRECTORY = new File("/var/log/FRC-CSV/");
         }
+        this.ROOT_DIRECTORY =
+                new File(Paths.get(this.LOG_DIRECTORY.getPath()).getRoot().toString());
+        this.FILENAME = fileName;
+        this.MAX_LOG_FILE_COUNT = maxLogFileCount;
+        this.MIN_REQUIRED_FREE_SPACE = minimumRequiredFreeSpace;
+        this.MAX_DIRECTORY_SIZE = maxDirectorySize;
+        this.MAX_LOG_SIZE = maxLogSize;
+        this.INIT_TIME_SECONDS = System.currentTimeMillis() / 1000L;
+        this.lastFlush = 0;
+        createNewLogFile();
+    }
 
-        log = new File(filePath + System.currentTimeMillis() + "-" + fileName + FILE_EXTENSION);
+    private void createNewLogFile() {
         try {
+            headersInitialized = false;
+
+            if (!LOG_DIRECTORY.exists()) {
+                LOG_DIRECTORY.mkdirs();
+            }
+
+            // Close the previous file if one existed
+            if (csvWriter != null) {
+                csvWriter.close();
+            }
+
+            File[] files = LOG_DIRECTORY
+                    .listFiles((dir, name) -> name.contains(FILENAME + FILE_EXTENSION));
+
+            if (files.length >= MAX_LOG_FILE_COUNT) {
+                System.out.println("MAX_LOG_FILE_COUNT exceeded, purging oldest files first.");
+                for (int i = 0; i < files.length - MAX_LOG_FILE_COUNT; i++) {
+                    files[i].delete();
+                }
+            }
+
+            log = new File(LOG_DIRECTORY.getPath() + File.separatorChar + FILENAME + FILE_EXTENSION
+                    + "-" + System.currentTimeMillis());
             csvWriter = new FileWriter(log);
+            System.out.println(String.format("New file created: %s", log.getName()));
+
+        } catch (SecurityException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-    }
-
-    /*
-     * Gets the current time and date of the present to write as a timestamp.
-     * 
-     * @return returns the current date and time as a string
-     */
-    protected String getPresentTimeInDateFormat() {
-        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
     }
 
     /*
      * Log and filesystem size checks.
      */
-
-    protected Boolean diskSpaceCheck() {
-        if (MIN_REQUIRED_FREE_SPACE <= rootDir.getFreeSpace())
-            return true;
-        else
-            return false;
+    private boolean isDiskSpaceLimitExceeded() {
+        return ROOT_DIRECTORY.getFreeSpace() <= MIN_REQUIRED_FREE_SPACE * STORAGE_PURGE_PERCENT;
     }
 
-    protected Boolean fileSizeCheck() {
-        if (log.length() < MAX_LOG_SIZE)
-            return true;
-        else
-            return false;
+    private boolean isFileSizeLimitExceeded() {
+        return log.length() > MAX_LOG_SIZE;
     }
 
-    protected void initialTimestampWrite() {
+    private boolean isDirectorySizeLimitExceeded() {
+        return getDirectorySize() > MAX_DIRECTORY_SIZE * STORAGE_PURGE_PERCENT;
+    }
+
+    private long getDirectorySize() {
+        File[] files = LOG_DIRECTORY.listFiles();
+        long dirSize = 0;
+
+        for (int i = 0; i < files.length; i++) {
+            if (files[i].isFile()) {
+                dirSize += files[i].length();
+            }
+        }
+        return dirSize;
+    }
+
+    private void purgeOldestFilesDirectorySpace() {
+        File[] files = LOG_DIRECTORY.listFiles();
+        long dirSize = getDirectorySize();
+        long fileSize = 0;
+
+        for (File file : files) {
+            fileSize = file.length();
+            if (file.delete()) {
+                dirSize = dirSize - fileSize;
+            }
+
+            if (dirSize < MAX_DIRECTORY_SIZE * 0.8) {
+                break;
+            }
+        }
+    }
+
+    private void purgeOldestFilesRootDirectorySpace() {
+        File[] files = LOG_DIRECTORY.listFiles();
+        long dirSize = ROOT_DIRECTORY.getFreeSpace();
+        long fileSize = 0;
+
+        for (File file : files) {
+            fileSize = file.length();
+            if (file.delete()) {
+                dirSize = dirSize + fileSize;
+            }
+
+            if (dirSize > MIN_REQUIRED_FREE_SPACE * 1.2) {
+                break;
+            }
+        }
+    }
+
+    private void flushLog(boolean force) throws IOException {
+        Long currentTimeInSeconds = System.currentTimeMillis() / 1000L;
+        if (currentTimeInSeconds > lastFlush || force) {
+            csvWriter.flush();
+            lastFlush = currentTimeInSeconds + 5000;
+        }
+    }
+
+    protected void writeToLog(String csv) {
         try {
-            this.csvWriter.append(String.format("%s,%s\n", "LOGGING STARTED", getPresentTimeInDateFormat()));
-            this.csvWriter.flush();
+            if (isDiskSpaceLimitExceeded()) {
+                System.out.println(
+                        "MIN_REQUIRED_FREE_SPACE exceeded, logging paused until addressed. Purging oldest files first.");
+                purgeOldestFilesRootDirectorySpace();
+            } else {
+                csvWriter.append(csv);
+                flushLog(false);
+
+                if (isDirectorySizeLimitExceeded()) {
+                    System.out.println("MAX_DIRECTORY_SIZE exceeded, purging oldest files first.");
+                    purgeOldestFilesDirectorySpace();
+                }
+
+                if (isFileSizeLimitExceeded()) {
+                    createNewLogFile();
+                }
+            }
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SecurityException e) {
             e.printStackTrace();
         }
     }
+
+    protected void writeHeadersToLog(String csv) {
+        writeToLog(csv);
+        headersInitialized = true;
+    }
+
+    protected long getInitTimeSeconds() {
+        return INIT_TIME_SECONDS;
+    }
+
 }
