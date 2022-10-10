@@ -9,15 +9,17 @@ import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
-import logger.Log;
+import logger.CSVWriter;
 
-public class TimeseriesHandler extends Log {
-    Boolean headersInitialized = false;
-
+public class TimeseriesHandler extends CSVWriter {
+    private Boolean headersInitialized = false;
     private List<Metric> metrics = new ArrayList<Metric>();
+    private Long initTime = System.currentTimeMillis();
 
     public TimeseriesHandler(String fileName) {
         super(fileName);
+        LongSupplier longSupplier = () -> System.currentTimeMillis() - initTime;
+        metrics.add(new LongMetric("Timestamp", longSupplier));
     }
 
     public void registerMetric(String name, BooleanSupplier booleanSupplier) {
@@ -44,23 +46,26 @@ public class TimeseriesHandler extends Log {
         return metrics.stream().map(Metric::getDataAsString).collect(Collectors.toList());
     }
 
-    public void writeMetricsToTimeseriesLog(List<Metric> metrics) {
+    public String convertToCsv(List<String> values) {
+        return String.join(",", values);
+    }
+
+    public void writeMetricsToTimeseriesLog() {
         if (diskSpaceCheck()) {
             if (fileSizeCheck()) {
                 try {
                     if (headersInitialized == false) {
-                        logWriter.append(String.format("%s,%s\n", getPresentTimeInDateFormat(), getMetricNames()));
+                        csvWriter.append(String.format("%s\n", convertToCsv(getMetricNames())));
+                        headersInitialized = true;
                     }
-                    logWriter.append(String.format("%s,%s\n", getPresentTimeInDateFormat(), getMetricData()));
-                    logWriter.flush();
+                    csvWriter.append(String.format("%s\n", convertToCsv(getMetricData())));
+                    csvWriter.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             } else {
-                initializeNewFile();
-                initialTimestampWrite();
+                newFileWithEpochTimestamp();
             }
         }
     }
-
 }
