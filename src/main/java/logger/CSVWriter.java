@@ -73,8 +73,8 @@ public abstract class CSVWriter {
                 }
             }
 
-            log = new File(LOG_DIRECTORY.getPath() + File.separatorChar + FILENAME + FILE_EXTENSION
-                    + "-" + System.currentTimeMillis());
+            log = new File(LOG_DIRECTORY.getPath() + File.separatorChar + FILENAME + "-"
+                    + System.currentTimeMillis() + FILE_EXTENSION);
             csvWriter = new FileWriter(log);
             System.out.println(String.format("New file created: %s", log.getName()));
 
@@ -113,7 +113,8 @@ public abstract class CSVWriter {
     }
 
     private void purgeOldestFilesDirectorySpace() {
-        File[] files = LOG_DIRECTORY.listFiles((dir, name) -> name.contains(FILENAME + FILE_EXTENSION));
+        File[] files =
+                LOG_DIRECTORY.listFiles((dir, name) -> name.contains(FILENAME + FILE_EXTENSION));
         long dirSize = getDirectorySize();
         long fileSize = 0;
 
@@ -130,7 +131,8 @@ public abstract class CSVWriter {
     }
 
     private void purgeOldestFilesRootDirectorySpace() {
-        File[] files = LOG_DIRECTORY.listFiles((dir, name) -> name.contains(FILENAME + FILE_EXTENSION));
+        File[] files =
+                LOG_DIRECTORY.listFiles((dir, name) -> name.contains(FILENAME + FILE_EXTENSION));
         long dirSize = ROOT_DIRECTORY.getFreeSpace();
         long fileSize = 0;
 
