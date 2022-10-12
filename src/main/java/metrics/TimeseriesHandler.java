@@ -6,27 +6,24 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import com.google.common.base.Supplier;
-import logger.LogWriter;
 
-public class TimeseriesWriter extends LogWriter {
+public class TimeseriesHandler {
     private List<MetricDefinition> metricDefinitions;
-    private LongSupplier timestampSupplier;
+    private final LongSupplier secondsFromStartSupplier;
+    private final LongSupplier timestampEpoch;
+    private final Long initTime;
 
-    public TimeseriesWriter(String fileName) {
-        super(fileName);
+    public TimeseriesHandler() {
+        initTime = System.currentTimeMillis();
+
+        secondsFromStartSupplier = () -> (System.currentTimeMillis() / 1000L) - initTime / 1000L;
+        timestampEpoch = () -> System.currentTimeMillis();
+
         metricDefinitions = new ArrayList<MetricDefinition>();
-        timestampSupplier = () -> (System.currentTimeMillis() / 1000L) - getInitTimeSeconds();
-        metricDefinitions.add(new LongMetric("Timestamp", timestampSupplier));
-    }
-
-    public TimeseriesWriter(String fileName, int maxLogFileCount, long minimumRequiredFreeSpace,
-            long maxDirectorySize, long maxLogSize) {
-        super(fileName, maxLogFileCount, minimumRequiredFreeSpace, maxDirectorySize, maxLogSize);
-        LongSupplier longSupplier =
-                () -> (System.currentTimeMillis() / 1000L) - getInitTimeSeconds();
-        metricDefinitions.add(new LongMetric("Timestamp", longSupplier));
+        metricDefinitions.add(new LongMetric("Seconds from start", secondsFromStartSupplier));
+        metricDefinitions.add(new LongMetric("Timestamp", timestampEpoch));
     }
 
     public void registerMetric(String name, BooleanSupplier booleanSupplier) {
@@ -54,16 +51,14 @@ public class TimeseriesWriter extends LogWriter {
                 .collect(Collectors.toList());
     }
 
+    public String getMetricNamesCsv() {
+        return metricDefinitions.stream().map(MetricDefinition::getName)
+                .collect(Collectors.joining(","));
+    }
+
     public List<String> getMetricData() {
         return metricDefinitions.stream().map(MetricDefinition::getDataAsString)
                 .collect(Collectors.toList());
-    }
-
-    public void writeMetricsToTimeseriesLog() {
-        if (headersInitialized == false) {
-            writeHeadersToLog(String.format("%s\n", getMetricNames()));
-        }
-        writeToLog(String.format("%s\n", getMetricData()));
     }
 
 }

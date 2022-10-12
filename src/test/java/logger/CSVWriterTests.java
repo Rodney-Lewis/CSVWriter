@@ -6,48 +6,108 @@ package logger;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import events.EventsWriter;
-import events.EventsWriter.Level;
-
+import formatters.CsvFormatter;
+import formatters.EMultiByte;
+import formatters.EventFormatter;
+import java.io.File;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
-import metrics.TimeseriesWriter;
+import java.util.function.Supplier;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import metrics.TimeseriesHandler;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CSVWriterTests {
     @Test
     public void EventLogMethod() {
+        try {
+            File logdir;
 
-        EventsWriter eventHandler = new EventsWriter("events", Level.ERROR);
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                logdir = new File(System.getProperty("user.home") + "\\Documents\\FRC-CSV");
+            } else {
+                logdir = new File("/var/log/FRC-CSV");
+            }
+    
+            if (!logdir.exists()) {
+                logdir.mkdirs();
+            }
+    
+            EventFormatter eventFormatter = new EventFormatter();
+            FileHandler fhe = new FileHandler(logdir.getPath() + File.separatorChar + "event-%g.log", EMultiByte.KILOBYTE.bytes * 50, 12, false);
+            eventFormatter.setEventFileHeader("----- Team 1250: The Gatorbots | CHARGED UP 2023 -----");
+            fhe.setFormatter(eventFormatter);
+    
+            Logger event = Logger.getLogger("Events");
+            event.setLevel(Level.CONFIG);
+            event.setUseParentHandlers(false);
+            event.addHandler(fhe);
+    
+            event.log(Level.SEVERE, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.");
 
-        eventHandler.writeToEventLog(EventsWriter.Level.ERROR,
-                "Lorem ipsum dolor sit amet, liber dicant regione qui at, ea voluptatum inciderint quo, aliquando assentior philosophia mel eu. Mazim noster ne pro, tale facilisi qui et. Cum te omnis tantas alienum. Mel ad viris tempor virtute, nostro persius mea te. Cu his propriae invenire. His officiis intellegam dissentiunt id, eu tota ceteros vel.");
-        eventHandler.writeToEventLog(EventsWriter.Level.INFO,
-                "No natum persequeris ullamcorper eos, ex ius euismod lucilius suscipiantur. Audiam numquam imperdiet mei et, ipsum velit insolens ut vel. Ea dicta verear veritus est. Sed affert facilis sententiae ne, partiendo scripserit ex has. Impedit tractatos pri ad, sit deleniti sensibus et, qui ea dico oblique admodum.");
-        eventHandler.writeToEventLog(EventsWriter.Level.WARN,
-                "Dictas intellegat nec no, ius minimum consequuntur ne, eu his veri quaerendum repudiandae. Simul offendit scaevola ad mei. Eos amet omnes consectetuer ea, eu albucius luptatum signiferumque sit. Vocent suscipit referrentur ex vel.");
-
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+      
     }
 
     @Test
     public void TimeseriesLogMethod() {
-        TimeseriesWriter timeseriesHandler = new TimeseriesWriter("timeseries");
-
         DoubleSupplier doubleSupplier = () -> Math.random();
-        BooleanSupplier booleanSupplier = () -> true;
-        LongSupplier longSupplier = () -> System.currentTimeMillis();
-        IntSupplier integerSupplier = () -> Integer.MAX_VALUE;
+        BooleanSupplier booleanSupplier = () -> Math.random() > 0.5;
+        LongSupplier longSupplier = () -> Math.round(Math.random());
+        IntSupplier intSupplier = () -> Math.round((float) Math.random());
+        Supplier<String> stringSupplier = () -> "String";
 
-        timeseriesHandler.registerMetric("Bool", booleanSupplier);
-        timeseriesHandler.registerMetric("Int", integerSupplier);
-        timeseriesHandler.registerMetric("Long", longSupplier);
-        timeseriesHandler.registerMetric("Double", doubleSupplier);
+        TimeseriesHandler timeseriesHandler = new TimeseriesHandler();
+        timeseriesHandler.registerMetric("Double 1", doubleSupplier);
+        timeseriesHandler.registerMetric("Double 2", doubleSupplier);
+        timeseriesHandler.registerMetric("Double 3", doubleSupplier);
 
-        for (int i = 0; i < 10; i++) {
-            timeseriesHandler.writeMetricsToTimeseriesLog();
+        timeseriesHandler.registerMetric("Boolean 1", booleanSupplier);
+        timeseriesHandler.registerMetric("Boolean 2", booleanSupplier);
+        timeseriesHandler.registerMetric("Boolean 3", booleanSupplier);
+
+        timeseriesHandler.registerMetric("Long 1", longSupplier);
+        timeseriesHandler.registerMetric("Long 2", longSupplier);
+        timeseriesHandler.registerMetric("Long 3", longSupplier);
+
+        timeseriesHandler.registerMetric("Int 1", intSupplier);
+        timeseriesHandler.registerMetric("Int 2", intSupplier);
+        timeseriesHandler.registerMetric("Int 3", intSupplier);
+
+        timeseriesHandler.registerMetric("String 1", stringSupplier);
+
+        try {
+            File logdir;
+
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                logdir = new File(System.getProperty("user.home") + "\\Documents\\FRC-1");
+            } else {
+                logdir = new File("/var/log/FRC-CSV");
+            }
+    
+            if (!logdir.exists()) {
+                logdir.mkdirs();
+            }
+    
+            CsvFormatter csvFormatter = new CsvFormatter();
+            FileHandler fh = new FileHandler(logdir.getPath() + File.separatorChar + "timeseries-%g.log", EMultiByte.KILOBYTE.bytes * 50, 12, false);
+            csvFormatter.setCsvFileHeader(timeseriesHandler.getMetricNamesCsv());
+            fh.setFormatter(csvFormatter);    
+    
+            Logger timeseries = Logger.getLogger("Timeseries");
+            timeseries.setLevel(Level.ALL);
+            timeseries.setUseParentHandlers(false);
+            timeseries.addHandler(fh);
+            timeseries.log(Level.ALL, "Double 1, Double 2, Double 3");
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
