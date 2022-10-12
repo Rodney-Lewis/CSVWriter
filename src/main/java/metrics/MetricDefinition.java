@@ -1,10 +1,10 @@
 package metrics;
 
-public abstract class Metric {
+public abstract class MetricDefinition {
 
     private String name;
 
-    protected Metric(String name) {
+    protected MetricDefinition(String name) {
         this.name = name;
     }
 

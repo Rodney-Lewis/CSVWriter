@@ -5,7 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
 
-public abstract class CSVWriter {
+public abstract class LogWriter {
     private final String FILE_EXTENSION = ".csv";
     private final double STORAGE_PURGE_PERCENT = 0.975;
     private final int MAX_LOG_FILE_COUNT;
@@ -24,12 +24,12 @@ public abstract class CSVWriter {
     protected FileWriter csvWriter;
 
 
-    protected CSVWriter(String fileName) {
+    protected LogWriter(String fileName) {
         this(fileName, 12, EMultiByte.MEGABYTE.bytes * 25, EMultiByte.MEGABYTE.bytes * 10,
                 EMultiByte.KILOBYTE.bytes * 50);
     }
 
-    protected CSVWriter(String fileName, int maxLogFileCount, long minimumRequiredFreeSpace,
+    protected LogWriter(String fileName, int maxLogFileCount, long minimumRequiredFreeSpace,
             long maxDirectorySize, long maxLogSize) {
         os = System.getProperty("os.name");
         if (os.toLowerCase().contains("windows")) {

@@ -2,7 +2,7 @@ package metrics;
 
 import java.util.function.LongSupplier;
 
-public class LongMetric extends Metric {
+public class LongMetric extends MetricDefinition {
 
     private LongSupplier longSupplier;
 

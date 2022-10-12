@@ -2,7 +2,7 @@ package metrics;
 
 import java.util.function.BooleanSupplier;
 
-public class BooleanMetric extends Metric {
+public class BooleanMetric extends MetricDefinition {
 
     private BooleanSupplier booleanSupplier;
 

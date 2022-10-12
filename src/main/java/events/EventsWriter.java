@@ -1,27 +1,27 @@
 package events;
 
-import logger.CSVWriter;
+import logger.LogWriter;
 
-public class EventsHandler extends CSVWriter {
+public class EventsWriter extends LogWriter {
 
-    public enum Severity {
+    public enum Level {
         TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
     }
 
-    private Severity level;
+    private Level level;
 
-    public EventsHandler(String fileName, Severity level) {
+    public EventsWriter(String fileName, Level level) {
         super(fileName);
         this.level = level;
     }
 
-    public EventsHandler(String fileName, int maxLogFileCount, long minimumRequiredFreeSpace,
-    long maxDirectorySize, long maxLogSize, Severity level) {
+    public EventsWriter(String fileName, int maxLogFileCount, long minimumRequiredFreeSpace,
+    long maxDirectorySize, long maxLogSize, Level level) {
         super(fileName, maxLogFileCount, minimumRequiredFreeSpace, maxDirectorySize, maxLogSize);
         this.level = level;
     }
 
-    private boolean compareLevels(Severity comparedLevel) {
+    private boolean compareLevels(Level comparedLevel) {
         return level.ordinal() >= comparedLevel.ordinal();
     }
 
@@ -32,7 +32,7 @@ public class EventsHandler extends CSVWriter {
      * 
      * @param Message that describes the event
      */
-    public void writeToEventLog(Severity level, String message) {
+    public void writeToEventLog(Level level, String message) {
         if (headersInitialized == false) {
             writeHeadersToLog(String.format("%s,%s,%s\n", "Timestamp", "Level", "Message"));
         }

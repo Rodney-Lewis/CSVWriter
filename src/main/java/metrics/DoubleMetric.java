@@ -2,7 +2,7 @@ package metrics;
 
 import java.util.function.DoubleSupplier;
 
-public class DoubleMetric extends Metric {
+public class DoubleMetric extends MetricDefinition {
 
     private DoubleSupplier doubleSupplier;
 

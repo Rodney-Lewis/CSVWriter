@@ -2,7 +2,7 @@ package metrics;
 
 import java.util.function.Supplier;
 
-public class StringMetric extends Metric {
+public class StringMetric extends MetricDefinition {
 
     private Supplier<String> stringSupplier;
 

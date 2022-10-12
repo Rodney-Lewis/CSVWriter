@@ -2,7 +2,7 @@ package metrics;
 
 import java.util.function.IntSupplier;
 
-public class IntMetric extends Metric {
+public class IntMetric extends MetricDefinition {
 
 	private IntSupplier intSupplier;
 
