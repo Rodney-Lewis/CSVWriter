@@ -28,9 +28,9 @@ public class CSVWriterTests {
             File logdir;
 
             if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-                logdir = new File(System.getProperty("user.home") + "\\Documents\\FRC-CSV");
+                logdir = new File(System.getProperty("user.home") + "\\Documents\\FRC1250");
             } else {
-                logdir = new File("/var/log/FRC-CSV");
+                logdir = new File("/var/log/FRC1250");
             }
     
             if (!logdir.exists()) {
