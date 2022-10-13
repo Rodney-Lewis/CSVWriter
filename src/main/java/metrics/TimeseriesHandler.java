@@ -23,7 +23,7 @@ public class TimeseriesHandler {
 
         metricDefinitions = new ArrayList<MetricDefinition>();
         metricDefinitions.add(new LongMetric("Seconds from start", secondsFromStartSupplier));
-        metricDefinitions.add(new LongMetric("Timestamp", timestampEpoch));
+        metricDefinitions.add(new LongMetric("Epoch Timestamp", timestampEpoch));
     }
 
     public void registerMetric(String name, BooleanSupplier booleanSupplier) {
